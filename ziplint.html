@@ -1,0 +1,257 @@
+<html>
+	<head>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script>
+
+			function toText( binary ){
+				var t = '';
+				for (var i = binary.length - 1; i >= 0; i-=2) {
+					t = String.fromCharCode(parseInt('0x' + binary[i-1] +binary[i] )) + t;
+				};
+				return t;
+			};
+
+			function textToText( text ){
+				var t = '';
+				for (var i = binary.length - 1; i >= 0; i-=2) {
+					t = String.fromCharCode(parseInt('0x' + binary[i-1] +binary[i] )) + t;
+				};
+				return t;
+			};
+
+			function toInt( binary ){
+				var t = 0;
+				for (var i = 0; i < binary.length; i+=2 ) {
+					t += parseInt( '0x' + binary[i] + binary[i+1] ) * ( Math.pow(256, i / 2 ) ) ;
+				};
+
+				return t;
+			};
+
+			$(function(){
+				$('button').click(function(){
+					var result = $('#result');
+					var zip = $('#zip').val().replace(/[\n\s]/gi,'');
+
+					var parts = zip.replace(/(504b(0304|0506|0102))/gi,",$1").split(',');
+					//var parts = zip.match(/(504b(0304|0506|0102))/gi);
+					//var files = mainParts[0].split(/504b0304/gi);
+					result.empty();
+					var k = 0;
+					for (var i = 0; i < parts.length ; i++ ) {
+						var clas = '';
+						$ret = $('<div class/>');						
+						switch( parts[i].slice(4,8) ){
+							case '0304': clas = 'file';
+								var b = 0; 
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'signature') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'version') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'flags') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'compression') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'modtime') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'moddate') );
+								$ret.append( $('<br/>') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'crc-32') );								
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b + 8 ) ) ).attr('title', 'compressed size: ' + toInt( parts[i].slice(  b,  ( b += 8 ) ) ) ) );								
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b + 8 ) ) ).attr('title', 'uncompressed size: ' + toInt( parts[i].slice(  b,  ( b += 8 ) ) ) ) );									
+								var fileLen = toInt( parts[i].slice(  b,  ( b + 4 ) ) );								
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'file name len: ' + fileLen ) );								
+								var extraLen = toInt( parts[i].slice(  b,  ( b + 4 ) ) );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'extra field len: ' + extraLen ) );	
+
+								$ret.append( $('<br/>') );	
+								//var fileName = toText( parts[i].slice(  b,  ( b + fileLen * 2 ) ) );								
+								//$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += fileLen * 2 )  ) ).attr('title', 'filename') );	
+								//$ret.append( $('<span/>').html( parts[i].slice(  b  ) ).attr('title', 'content') );	
+
+								var fileName = toText( parts[i].slice(  b,  ( b + fileLen * 2 ) ) )  || '&nbsp;';	
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += fileLen * 2 )  ) ).attr('title', 'filename') );
+								var extraString = toText( parts[i].slice(  b,  ( b + extraLen * 2 ) ) )  || '&nbsp;' ;	
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += extraLen * 2 )  )  || '&nbsp;' ).attr('title', 'extra') );	
+								var fileContent = toText( parts[i].slice( b ) ) || '&nbsp;';
+
+								if( fileContent ) $ret.prepend( $('<pre/>').html( fileContent ) );
+								$ret.prepend( $('<label/>').html( k/2 + ": " + fileName ) );	
+								$ret.prepend( $('<label/>').html( "postHeader: (" + fileLen + ") + (" + extraLen + ") = " + ( fileLen + extraLen ) ) );	
+							break;
+							case '0506': clas = 'header';
+								//$ret.append($('<span/>').html(parts[i]) );
+								var b = 0; 
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'signature') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'disk number') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'disk# w/cd') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'disk entries') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'disk entries') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'Central directory size') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'Offset of cd wrt to starting disk') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'Comment len') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b  ) ).attr('title', 'ZIP file comment') );
+								$ret.prepend( $('<label/>').html( toText( parts[i].slice(  b  ) ) || '&nbsp;' ) );	
+
+								$ret.prepend( $('<label/>').html( k/2 + ": Document header" ) );
+							break;
+							case '0102': clas = 'file-header';
+								var b = 0; 
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'signature') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'version') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'version needed') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'flags') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'compression') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'modtime') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'moddate') );
+								$ret.append( $('<br/>') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'crc-32') );								
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'compressed size') );								
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'uncompressed size') );											
+								var fileLen = toInt( parts[i].slice(  b,  ( b + 4 ) ) );								
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'file name len') );							
+								var extraLen = toInt( parts[i].slice(  b,  ( b + 4 ) ) );		
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'extra field len') );	
+								$ret.append( $('<br/>') );	
+
+								var commentLen = toInt( parts[i].slice(  b,  ( b + 4 ) ) );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'file comment len') );		
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'disk # start') );		
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 4 ) ) ).attr('title', 'internal attr.') );		
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'external attr.') );		
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += 8 ) ) ).attr('title', 'offset of local header') );	
+
+								$ret.append( $('<br/>') );	
+								var fileName = toText( parts[i].slice(  b,  ( b + fileLen * 2 ) ) );	
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += fileLen * 2 )  )  || '&nbsp;' ).attr('title', 'filename') );
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += extraLen * 2 )  )  || '&nbsp;' ).attr('title', 'extra') );	
+								$ret.append( $('<span/>').html( parts[i].slice(  b,  ( b += commentLen * 2 )  )  || '&nbsp;' ).attr('title', 'comment') );	
+
+								$ret.prepend( $('<label/>').html( k/2 + ": " +fileName ) );	
+							break;
+							default:
+						}
+						k += parts[i].length;
+						result.append( $ret.addClass( clas ) );
+					};
+					//result.append( $('<div class="header"/>').html( mainParts[1] ) );
+				});
+			});
+		</script>
+		<style type="text/css">
+			body{
+				font-family: monospace !important;
+			}
+			textarea{
+				height: 200px;
+				width: 100%;
+			}
+			span {
+				padding: 5px;
+				display: inline-block;
+			}
+			[title] {
+			  border: 1px solid rgba(0, 0, 0, 0.13);
+			}
+			pre{
+				padding: 15px;
+				background-color: #D6D6D6;
+				border: 1px solid rgba(128, 128, 128, 0.54);
+				line-height: 20px;
+				word-wrap: break-word;
+			}
+			label {
+				display: block;
+				padding: 5px;
+				font-weight: bold;
+			}
+			button{
+				background-color: #519E51;
+				color: white;
+				border: 0;
+				padding: 15px 30px;
+				text-transform: uppercase;
+			}
+			body > div:first-child {
+				padding: 20px;
+				border: 1px solid #ABABAB;
+				background: #E2E2E2;
+				margin-bottom: 25px;
+			}
+			body > div > div{
+				padding: 25px;
+			}
+			body > div:first-child > div{
+				padding: 25px 0 0;
+			}
+			.file{
+				border: 1px solid blue;
+				background: rgba(0, 0, 255, 0.08);
+				margin-bottom: 20px;
+			}
+			.file-header{
+				border: 1px dotted blue;
+				background-color: rgba(0, 0, 255, 0.4);
+				margin-bottom: 20px;
+			}
+			.header{
+				border: 1px dotted green;
+				background-color: rgba(109, 136, 28, 0.4);
+				margin-bottom: 20px;
+			}
+		</style>
+	</head>
+	<body>
+		<div>
+			<textarea id="zip">
+504b 0304 0a00 0000 0000 f391 3747 048b
+e6a7 4702 0000 4702 0000 0d00 0000 6d61
+6e69 6665 7374 2e6a 736f 6e7b 0d0a 0922
+6469 7363 6970 6c69 6e61 223a 7b0d 0a09
+0922 6964 223a 2231 3233 3334 3533 3536
+3436 222c 0d0a 0909 226e 6f6d 6522 3a20
+2244 6973 6369 706c 696e 6120 6465 2074
+6573 7465 222c 0d0a 0909 2273 6967 6c61
+223a 2022 6469 7363 2d74 6573 7422 2c0d
+0a09 0922 6175 746f 7222 3a20 2241 6e64
+72c3 a920 5065 7373 6f61 222c 0d0a 0909
+2265 6d65 6e74 6122 3a20 224c 6f72 656d
+2049 7073 756d 222c 0d0a 0909 2263 6172
+6761 2d68 6f72 6172 6961 223a 2034 302c
+0d0a 0909 2264 6174 612d 6372 6961 6361
+6f22 3a22 3231 2f30 382f 3230 3135 2031
+303a 3330 3a30 3022 2c0d 0a09 0922 6461
+7461 2d6d 6f64 6966 6963 616f 223a 2232
+312f 3039 2f32 3031 3520 3130 3a33 303a
+3135 222c 0d0a 0909 2273 7461 7475 7322
+3a20 2272 6173 6375 6e68 6f22 2c0d 0a09
+0922 636f 6d65 6e74 6172 696f 223a 2022
+4c6f 7265 6d20 4970 7375 6d22 2c0d 0a09
+0922 7665 7273 616f 223a 2022 220d 0a09
+7d2c 0d0a 0922 6669 6c68 6f73 223a 5b0d
+0a09 097b 0d0a 0909 0922 6964 223a 6661
+6c73 652c 0d0a 0909 0922 6e6f 6d65 223a
+2269 6e74 726f 6475 c3a7 c3a3 6f22 0d0a
+0909 7d2c 0d0a 0909 7b0d 0a09 0909 226e
+6f6d 6522 3a22 556e 6964 6164 6520 3122
+2c0d 0a09 0909 2266 696c 686f 7322 3a5b
+0d0a 0909 0909 7b0d 0a09 0909 0909 2269
+6422 3a22 7465 6c61 2d31 222c 0d0a 0909
+0909 0922 6e6f 6d65 223a 2254 656c 6120
+3122 0d0a 0909 0909 7d2c 0d0a 0909 0909
+7b0d 0a09 0909 0909 2269 6422 3a66 616c
+7365 2c0d 0a09 0909 0909 226e 6f6d 6522
+3a22 5465 6c61 2032 220d 0a09 0909 097d
+0d0a 0909 095d 0d0a 0909 7d0d 0a09 5d0d
+0a7d 504b 0102 1f00 0a00 0000 0000 f391
+3747 048b e6a7 4702 0000 4702 0000 0d00
+2400 0000 0000 0000 8000 0000 0000 0000
+6d61 6e69 6665 7374 2e6a 736f 6e0a 0020
+0000 0000 0001 0018 00f9 5995 fe44 f6d0
+0176 a218 9476 f4d0 0176 a218 9476 f4d0
+0150 4b05 0600 0000 0001 0001 005f 0000
+0072 0200 0000 00
+			</textarea>
+			<div>
+				<button>Process</button>
+			</div>			
+		</div>
+		<div id="result">
+		</div>
+	</body>
+</html>
